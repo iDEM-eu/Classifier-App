@@ -1,4 +1,4 @@
-# 📊 Streamlit Text Classification
+# Multiligual Sentence Complexity Classification and XAI
 
 This is a **Streamlit-based web app** for **Sentence  classification** using multiple denoised models and **explainability with Captum**.
 ## 🖥️ Live App
