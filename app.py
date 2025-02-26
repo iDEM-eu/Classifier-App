@@ -55,7 +55,8 @@ with col2:
         
         if option == "Select a single model":
             st.subheader("🔹 Model Prediction")
-            st.info(f"🧠 **Model Used:** `{selected_model}`")
+            model_name_short = selected_model.split("/")[-1]  # Extracts the last part of the model path
+            st.info(f"🧠 **Model Used:** `{model_name_short}`")
 
             tokenizer, model = AutoTokenizer.from_pretrained(selected_model), AutoModelForSequenceClassification.from_pretrained(selected_model)
             model.eval()
