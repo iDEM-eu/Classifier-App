@@ -155,9 +155,9 @@ with col2:
                         st.dataframe(df_results)
 
                         # Provide download link if file was processed
-                        if input_method == "Upload File":
-                            csv = df_results.to_csv(index=False).encode('utf-8')
-                            st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
+                    if input_method == "Upload File":
+                        csv = df_results.to_csv(index=False).encode('utf-8')
+                        st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
 
         
 
