@@ -30,16 +30,19 @@ col1, col2 = st.columns([1, 2])
 with col1:
     ### **🔹 Model Selection & User Input Section**
     st.subheader("⚙️ Model Selection & Settings")
-    
     option = st.radio("Choose an option:", ["Select a single model", "Compare all models"])
-
     if option == "Select a single model":
         selected_model = st.selectbox("Choose a model:", MODEL_NAMES)
-
-    text = st.text_area("✍️ Enter text:", "", height=150)
+    
+    input_method = st.radio("Choose input method:", ["Paste Text", "Upload File"])
+    
+    if input_method == "Paste Text":
+        text = st.text_area("✍️ Enter text:", "", height=150)
+    else:
+        file = st.file_uploader("📂 Upload a text file", type=["txt"])
+    
     explain_xai = st.checkbox("🔎 Explain Predictions (Captum XAI)")
-
-    predict_clicked = st.button("🔍 Predict")
+    predict_clicked = st.button("🔍 Analyse")
 
 st.markdown("---")  # **Add a separator between input and output sections**
 
@@ -51,24 +54,27 @@ with col2:
     simple_count, complex_count = 0, 0
     df_results = pd.DataFrame()
 
-    if predict_clicked and text.strip():
+    if predict_clicked:
+        results = []
         
-        if option == "Select a single model":
-            st.subheader("🔹 Model Prediction")
-            model_name_short = selected_model.split("/")[-1]  # Extracts the last part of the model path
-            st.info(f"🧠 **Model Used:** `{model_name_short}`")
+        if input_method == "Paste Text" and text.strip():
+            sentences = [text]
+            if option == "Select a single model":
+                st.subheader("🔹 Model Prediction")
+                model_name_short = selected_model.split("/")[-1]  # Extracts the last part of the model path
+                st.info(f"🧠 **Model Used:** `{model_name_short}`")
 
-            tokenizer, model = AutoTokenizer.from_pretrained(selected_model), AutoModelForSequenceClassification.from_pretrained(selected_model)
-            model.eval()
+                tokenizer, model = AutoTokenizer.from_pretrained(selected_model), AutoModelForSequenceClassification.from_pretrained(selected_model)
+                model.eval()
 
-            inputs = tokenizer(text, return_tensors="pt")
-            with torch.no_grad():
-                outputs = model(**inputs)
-                predicted_class = outputs.logits.argmax().item()
+                inputs = tokenizer(text, return_tensors="pt")
+                with torch.no_grad():
+                    outputs = model(**inputs)
+                    predicted_class = outputs.logits.argmax().item()
 
-            label = "Simple" if predicted_class == 0 else "Complex"
-            st.markdown(f'<div class="result-box">✅ **Predicted Class:** {label}</div>', unsafe_allow_html=True)
-            if label == "Complex":
+                label = "Simple" if predicted_class == 0 else "Complex"
+                st.markdown(f'<div class="result-box">✅ **Predicted Class:** {label}</div>', unsafe_allow_html=True)
+                if label == "Complex":
                     st.subheader(" Advanced Complexity Analysis")
 
                     with st.spinner("🔄 Running secondary classification..."):
@@ -89,16 +95,40 @@ with col2:
                         st.warning(f"🧐 **Complexity Type:** {detailed_label}")
 
 
-            if explain_xai:
-                st.subheader("🔍 Captum Explainability")
-                with st.spinner("Computing attributions..."):
-                    xai = XAI(text, label, tokenizer, model, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-                    html_output, top_attributions = xai.generate_html()
-                st.write(HTML(html_output), unsafe_allow_html=True)
-                st.write("📋 **Top Attributed Words**")
-                st.dataframe(top_attributions)
+                if explain_xai:
+                    st.subheader("🔍 Captum Explainability")
+                    with st.spinner("Computing attributions..."):
+                        xai = XAI(text, label, tokenizer, model, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+                        html_output, top_attributions = xai.generate_html()
+                    st.write(HTML(html_output), unsafe_allow_html=True)
+                    st.write("📋 **Top Attributed Words**")
+                    st.dataframe(top_attributions)
 
-                
+                    
+        elif input_method == "Upload File" and file is not None:
+            with st.spinner("Processing file..."):
+                sentences = file.read().decode("utf-8").split("\n")
+                with st.spinner("Analyzing..."):
+                    for sentence in sentences:
+                        if sentence.strip():
+                            tokenizer, model = AutoTokenizer.from_pretrained(selected_model), AutoModelForSequenceClassification.from_pretrained(selected_model)
+                            model.eval()
+                            inputs = tokenizer(sentence, return_tensors="pt")
+                            with torch.no_grad():
+                                outputs = model(**inputs)
+                                predicted_class = outputs.logits.argmax().item()
+                            label = "Simple" if predicted_class == 0 else "Complex"
+                            results.append({"Sentence": sentence, "Predicted Class": label})
+            
+                    df_results = pd.DataFrame(results)
+                    st.dataframe(df_results)
+
+                    # Provide download link if file was processed
+                    if input_method == "Upload File":
+                        csv = df_results.to_csv(index=False).encode('utf-8')
+                        st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
+
+        
 
         elif option == "Compare all models":
             st.subheader("📊 Model Predictions")
@@ -173,7 +203,7 @@ with col2:
 
     else:
         st.warning("⚠️ Please enter some text to classify.")
-
+        sentences = []
 # ---- Footer ----
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("""
