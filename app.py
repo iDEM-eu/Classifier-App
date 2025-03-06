@@ -117,16 +117,47 @@ with col2:
                             with torch.no_grad():
                                 outputs = model(**inputs)
                                 predicted_class = outputs.logits.argmax().item()
-                            label = "Simple" if predicted_class == 0 else "Complex"
-                            results.append({"Sentence": sentence, "Predicted Class": label})
+                                label = "Simple" if predicted_class == 0 else "Complex"
+                    
+                                # If the sentence is complex, run typology classifier
+                                complexity_type = "N/A"
+                                top_attributed_words = "N/A"
+                                if label == "Complex":
+                                    with st.spinner("🔄 Running secondary classification..."):
+                                        typology_model_name = "hannah-khallaf/Typlogy-Classifier"
+                                        typology_tokenizer = AutoTokenizer.from_pretrained(typology_model_name)
+                                        typology_model = AutoModelForSequenceClassification.from_pretrained(typology_model_name)
+                                        typology_model.eval()
+                            
+                                    typology_inputs = typology_tokenizer(sentence, return_tensors="pt")
+                                    with torch.no_grad():
+                                        typology_outputs = typology_model(**typology_inputs)
+                                        complexity_label = typology_outputs.logits.argmax().item()
+                            
+                                    # Mapping complexity types 
+                                    complexity_types =  {0: 'Compression',  1:'Explanation',  2: 'Modulation',  3: 'Omission', 4: 'Synonymy',  5: 'Syntactic Changes',  6: 'Transcript',  7: 'Transposition'}
+                                    complexity_type = complexity_types.get(complexity_label, "Unknown Complexity Type")
+                            
+                                # If XAI is enabled, run Captum analysis
+                                if explain_xai:
+                                    xai = XAI(sentence, label, tokenizer, model, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+                                    _, top_attributions = xai.generate_html()
+                                    top_attributed_words = ", ".join(top_attributions.head(5)['Word'].tolist())
+                            
+                                results.append({
+                                    "Sentence": sentence, 
+                                    "Predicted Class": label, 
+                                    "Complexity Type": complexity_type,
+                                    "Top Attributed Words": top_attributed_words
+                                            })
             
-                    df_results = pd.DataFrame(results)
-                    st.dataframe(df_results)
+                        df_results = pd.DataFrame(results)
+                        st.dataframe(df_results)
 
-                    # Provide download link if file was processed
-                    if input_method == "Upload File":
-                        csv = df_results.to_csv(index=False).encode('utf-8')
-                        st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
+                        # Provide download link if file was processed
+                        if input_method == "Upload File":
+                            csv = df_results.to_csv(index=False).encode('utf-8')
+                            st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
 
         
 
