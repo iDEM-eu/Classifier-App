@@ -107,59 +107,70 @@ with col2:
                     
         elif input_method == "Upload File" and file is not None:
             with st.spinner("Processing file..."):
-                sentences = file.read().decode("utf-8").split("\n")
-                with st.spinner("Analyzing..."):
-                    for sentence in sentences:
-                        if sentence.strip():
-                            tokenizer, model = AutoTokenizer.from_pretrained(selected_model), AutoModelForSequenceClassification.from_pretrained(selected_model)
-                            model.eval()
-                            inputs = tokenizer(sentence, return_tensors="pt")
-                            with torch.no_grad():
-                                outputs = model(**inputs)
-                                predicted_class = outputs.logits.argmax().item()
-                                label = "Simple" if predicted_class == 0 else "Complex"
+                sentences = [s.strip() for s in file.read().decode("utf-8").split("\n") if s.strip()]
+
+                if not sentences:
+                    st.warning("⚠️ The file appears to be empty!")
+                else:
+                    with st.spinner("🔄 Loading model..."):
+                        tokenizer, model = AutoTokenizer.from_pretrained(selected_model), AutoModelForSequenceClassification.from_pretrained(selected_model)
+                        model.eval()
+
+                        if explain_xai:
+                            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
                     
-                                # If the sentence is complex, run typology classifier
-                                complexity_type = "N/A"
-                                top_attributed_words = "N/A"
-                                if label == "Complex":
-                                    with st.spinner("🔄 Running secondary classification..."):
-                                        typology_model_name = "hannah-khallaf/Typlogy-Classifier"
-                                        typology_tokenizer = AutoTokenizer.from_pretrained(typology_model_name)
-                                        typology_model = AutoModelForSequenceClassification.from_pretrained(typology_model_name)
-                                        typology_model.eval()
-                            
-                                    typology_inputs = typology_tokenizer(sentence, return_tensors="pt")
-                                    with torch.no_grad():
-                                        typology_outputs = typology_model(**typology_inputs)
-                                        complexity_label = typology_outputs.logits.argmax().item()
-                            
-                                    # Mapping complexity types 
-                                    complexity_types =  {0: 'Compression',  1:'Explanation',  2: 'Modulation',  3: 'Omission', 4: 'Synonymy',  5: 'Syntactic Changes',  6: 'Transcript',  7: 'Transposition'}
-                                    complexity_type = complexity_types.get(complexity_label, "Unknown Complexity Type")
-                            
-                                # If XAI is enabled, run Captum analysis
-                                if explain_xai:
-                                    xai = XAI(sentence, label, tokenizer, model, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-                                    _, top_attributions = xai.generate_html()
-                                    top_attributed_words = ", ".join(top_attributions.head(5)['Word'].tolist())
-                            
-                                results.append({
-                                    "Sentence": sentence, 
-                                    "Predicted Class": label, 
-                                    "Complexity Type": complexity_type,
-                                    "Top Attributed Words": top_attributed_words
-                                            })
-            
-                        df_results = pd.DataFrame(results)
-                        st.dataframe(df_results)
+                    results = []
 
-                        # Provide download link if file was processed
-                    if input_method == "Upload File":
-                        csv = df_results.to_csv(index=False).encode('utf-8')
-                        st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
+                    with st.spinner("Analyzing..."):
+                        inputs = tokenizer(sentences, return_tensors="pt", padding=True, truncation=True)
+                        
+                        with torch.no_grad():
+                            outputs = model(**inputs)
+                            predicted_classes = outputs.logits.argmax(dim=1).tolist()
 
-        
+                        for i, sentence in enumerate(sentences):
+                            label = "Simple" if predicted_classes[i] == 0 else "Complex"
+                            complexity_type = "N/A"
+                            top_attributed_words = "N/A"
+
+                            # If the sentence is complex, run secondary classification
+                            if label == "Complex":
+                                with st.spinner("🔄 Running secondary classification..."):
+                                    typology_model_name = "hannah-khallaf/Typlogy-Classifier"
+                                    typology_tokenizer = AutoTokenizer.from_pretrained(typology_model_name)
+                                    typology_model = AutoModelForSequenceClassification.from_pretrained(typology_model_name)
+                                    typology_model.eval()
+
+                                typology_inputs = typology_tokenizer(sentence, return_tensors="pt")
+                                with torch.no_grad():
+                                    typology_outputs = typology_model(**typology_inputs)
+                                    complexity_label = typology_outputs.logits.argmax().item()
+
+                                # Mapping complexity types
+                                complexity_types = {0: 'Compression', 1: 'Explanation', 2: 'Modulation', 3: 'Omission', 
+                                                    4: 'Synonymy', 5: 'Syntactic Changes', 6: 'Transcript', 7: 'Transposition'}
+                                complexity_type = complexity_types.get(complexity_label, "Unknown Complexity Type")
+
+                            # If XAI is enabled, run Captum analysis
+                            if explain_xai and label == "Complex":
+                                xai = XAI(sentence, label, tokenizer, model, device)
+                                _, top_attributions = xai.generate_html()
+                                top_attributed_words = ", ".join(top_attributions.head(5)['Word'].tolist())
+
+                            results.append({
+                                "Sentence": sentence,
+                                "Predicted Class": label,
+                                "Complexity Type": complexity_type,
+                                "Top Attributed Words": top_attributed_words
+                            })
+
+                    df_results = pd.DataFrame(results)
+                    st.dataframe(df_results)
+
+                    # Provide download link
+                    csv = df_results.to_csv(index=False).encode('utf-8')
+                    st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
+
 
         elif option == "Compare all models":
             st.subheader("📊 Model Predictions")
