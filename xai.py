@@ -74,7 +74,10 @@ class XAI:
         Computes word-level attributions while filtering out punctuation and stop words based on language.
         """
         self.input_ids, self.ref_input_ids = self.construct_input_ref()
-        self.tokens = self.tokenizer.convert_ids_to_tokens(self.input_ids[0])
+        self.tokens = [
+            token for token in self.tokenizer.convert_ids_to_tokens(self.input_ids[0])
+                if token not in ["[CLS]", "[SEP]"]
+                ]
         
         lig = LayerIntegratedGradients(self.custom_forward, self.model.bert.embeddings)
         attributions, delta = lig.attribute(
