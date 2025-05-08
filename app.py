@@ -82,6 +82,15 @@ with col2:
     
                 df_results = pd.DataFrame(results)
                 st.dataframe(df_results)
+                
+                # **Insights Section**
+                st.subheader("📊 Insights")
+                if simple_count > complex_count:
+                    st.success(f"✅ Majority of models classified the text as **Simple** ({simple_count}/{len(MODEL_NAMES)}).")
+                elif complex_count > simple_count:
+                    st.error(f"🚀 Majority of models classified the text as **Complex** ({complex_count}/{len(MODEL_NAMES)}).")
+                else:
+                    st.info("⚖️ Equal split between 'Simple' and 'Complex' classifications.")
             else:
                 st.warning("⚠️ Please paste some text to compare across models.")
 
@@ -237,14 +246,6 @@ with col2:
             )
             st.plotly_chart(fig_sunburst, use_container_width=True)
 
-        # **Insights Section**
-        st.subheader("📊 Insights")
-        if simple_count > complex_count:
-            st.success(f"✅ Majority of models classified the text as **Simple** ({simple_count}/{len(MODEL_NAMES)}).")
-        elif complex_count > simple_count:
-            st.error(f"🚀 Majority of models classified the text as **Complex** ({complex_count}/{len(MODEL_NAMES)}).")
-        else:
-            st.info("⚖️ Equal split between 'Simple' and 'Complex' classifications.")
 
     else:
         st.warning("⚠️ Please enter some text to classify.")
