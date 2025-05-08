@@ -56,8 +56,37 @@ with col2:
 
     if predict_clicked:
         results = []
+        if option == "Compare all models":
+            if input_method == "Paste Text" and text.strip():
+                st.subheader("📊 Model Predictions")
+                progress_bar = st.progress(0)
+    
+                for i, model_name in enumerate(MODEL_NAMES):
+                    tokenizer = AutoTokenizer.from_pretrained(model_name)
+                    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+                    model.eval()
+    
+                    inputs = tokenizer(text, return_tensors="pt", truncation=True)
+                    with torch.no_grad():
+                        outputs = model(**inputs)
+                        predicted_class = outputs.logits.argmax().item()
+    
+                    label = "Simple" if predicted_class == 0 else "Complex"
+                    if label == "Simple":
+                        simple_count += 1
+                    else:
+                        complex_count += 1
+    
+                    results.append({"Model": model_name, "Predicted Class": label})
+                    progress_bar.progress((i + 1) / len(MODEL_NAMES))
+    
+                df_results = pd.DataFrame(results)
+                st.dataframe(df_results)
+            else:
+                st.warning("⚠️ Please paste some text to compare across models.")
+
         
-        if input_method == "Paste Text" and text.strip():
+        elif input_method == "Paste Text" and text.strip():
             sentences = [text]
             if option == "Select a single model":
                 st.subheader("🔹 Model Prediction")
@@ -172,33 +201,7 @@ with col2:
                     st.download_button(label="📥 Download Results", data=csv, file_name="classified_sentences.csv", mime="text/csv")
 
 
-        elif option == "Compare all models":
-            st.subheader("📊 Model Predictions")
-            results = []
-            progress_bar = st.progress(0)
-
-            for i, model_name in enumerate(MODEL_NAMES):
-                tokenizer, model = AutoTokenizer.from_pretrained(model_name), AutoModelForSequenceClassification.from_pretrained(model_name)
-                model.eval()
-
-                inputs = tokenizer(text, return_tensors="pt")
-                with torch.no_grad():
-                    outputs = model(**inputs)
-                    predicted_class = outputs.logits.argmax().item()
-
-                label = "Simple" if predicted_class == 0 else "Complex"
-
-                if predicted_class == 0:
-                    simple_count += 1
-                else:
-                    complex_count += 1
-
-                results.append({"Model": model_name, "Predicted Class": label})
-                progress_bar.progress((i + 1) / len(MODEL_NAMES))
-
-            df_results = pd.DataFrame(results)
-            st.dataframe(df_results)
-
+        
         # **Charts and Insights**
         if not df_results.empty:
             st.subheader("📈 Classification Breakdown")
