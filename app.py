@@ -88,9 +88,44 @@ with col2:
                 if simple_count > complex_count:
                     st.success(f"✅ Majority of models classified the text as **Simple** ({simple_count}/{len(MODEL_NAMES)}).")
                 elif complex_count > simple_count:
-                    st.error(f"🚀 Majority of models classified the text as **Complex** ({complex_count}/{len(MODEL_NAMES)}).")
+                    st.error(f" Majority of models classified the text as **Complex** ({complex_count}/{len(MODEL_NAMES)}).")
                 else:
                     st.info("⚖️ Equal split between 'Simple' and 'Complex' classifications.")
+                    # **Charts and Insights**
+                if not df_results.empty:
+                    st.subheader("📈 Classification Breakdown")
+        
+                    # **Improved Bar Chart**
+                    fig_bar = px.bar(
+                        x=["Simple", "Complex"],
+                        y=[simple_count, complex_count],
+                        text=[simple_count, complex_count],
+                        labels={"x": "Prediction", "y": "Number of Models"},
+                        title="How Many Models Classified as Simple vs. Complex",
+                        color=["Simple", "Complex"],
+                        color_discrete_sequence=["#2ECC71", "#E74C3C"],
+                    )
+                    st.plotly_chart(fig_bar, use_container_width=True)
+        
+                    # **Pie Chart for Class Proportions**
+                    fig_pie = px.pie(
+                        names=["Simple", "Complex"],
+                        values=[simple_count, complex_count],
+                        title="Proportion of Simple vs. Complex Predictions",
+                        hole=0.3,
+                        color_discrete_sequence=["#3498DB", "#E67E22"],
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True)
+        
+                    # **Sunburst Chart for Model Breakdown**
+                    fig_sunburst = px.sunburst(
+                        df_results, path=["Predicted Class", "Model"],
+                        title="Hierarchy of Model Predictions",
+                        color="Predicted Class",
+                        color_discrete_map={"Simple": "#2ECC71", "Complex": "#E74C3C"},
+                    )
+                    st.plotly_chart(fig_sunburst, use_container_width=True)
+
             else:
                 st.warning("⚠️ Please paste some text to compare across models.")
 
@@ -211,41 +246,7 @@ with col2:
 
 
         
-        # **Charts and Insights**
-        if not df_results.empty:
-            st.subheader("📈 Classification Breakdown")
-
-            # **Improved Bar Chart**
-            fig_bar = px.bar(
-                x=["Simple", "Complex"],
-                y=[simple_count, complex_count],
-                text=[simple_count, complex_count],
-                labels={"x": "Prediction", "y": "Number of Models"},
-                title="How Many Models Classified as Simple vs. Complex",
-                color=["Simple", "Complex"],
-                color_discrete_sequence=["#2ECC71", "#E74C3C"],
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-            # **Pie Chart for Class Proportions**
-            fig_pie = px.pie(
-                names=["Simple", "Complex"],
-                values=[simple_count, complex_count],
-                title="Proportion of Simple vs. Complex Predictions",
-                hole=0.3,
-                color_discrete_sequence=["#3498DB", "#E67E22"],
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-            # **Sunburst Chart for Model Breakdown**
-            fig_sunburst = px.sunburst(
-                df_results, path=["Predicted Class", "Model"],
-                title="Hierarchy of Model Predictions",
-                color="Predicted Class",
-                color_discrete_map={"Simple": "#2ECC71", "Complex": "#E74C3C"},
-            )
-            st.plotly_chart(fig_sunburst, use_container_width=True)
-
+    
 
     else:
         st.warning("⚠️ Please enter some text to classify.")
