@@ -133,14 +133,14 @@ class XAI:
             <h4>Prediction Probabilities</h4>
             <div>
                 <div>Simple</div>
-                <div style="width: 100%; height: 20px; background-color: #ddd; border-radius: 5px; margin: 5px 0;">
-                    <div style="width: {probabilities[0] * 100}%; height: 100%; background-color: blue; border-radius: 5px;"></div>
-                </div>
-                <p>Probability: {probabilities[0]:.2f}</p>
-                <div>Complex</div>
-                <div style="width: 100%; height: 20px; background-color: #ddd; border-radius: 5px; margin: 5px 0;">
-                    <div style="width: {probabilities[1] * 100}%; height: 100%; background-color: orange; border-radius: 5px;"></div>
-                </div>
+                    <div style="width: 100%; height: 20px; background-color: #ddd; border-radius: 5px; margin: 5px 0;">
+                        <div style="width: {probabilities[0] * 100}%; height: 100%; background-color: blue; border-radius: 5px;"></div>
+                    </div>
+                    <p>Probability: {probabilities[0]:.2f}</p>
+                    <div>Complex</div>
+                    <div style="width: 100%; height: 20px; background-color: #ddd; border-radius: 5px; margin: 5px 0;">
+                        <div style="width: {probabilities[1] * 100}%; height: 100%; background-color: orange; border-radius: 5px;"></div>
+                    </div>
                 <p>Probability: {probabilities[1]:.2f}</p>
             </div>
             <h4>Text with Highlighted Words</h4>
