@@ -68,8 +68,21 @@ class XAI:
     def compute_attributions(self):
         self.input_ids, self.ref_input_ids = self.construct_input_ref()
         self.tokens = [t for t in self.tokenizer.convert_ids_to_tokens(self.input_ids[0]) if t not in ["[CLS]", "[SEP]"]]
-
-        lig = LayerIntegratedGradients(self.custom_forward, self.model.bert.embeddings)
+    
+        # 🔍 Predict once to get the predicted label
+        with torch.no_grad():
+            logits = self.model(self.input_ids)[0]
+            probs = torch.softmax(logits, dim=1)
+            self.predicted_label = torch.argmax(probs, dim=1).item()
+    
+        # 🎯 Define a local forward function that uses the fixed label
+        def forward_func(inputs):
+            logits = self.model(inputs)[0]
+            probs = torch.softmax(logits, dim=1)
+            return probs[:, self.predicted_label]
+    
+        lig = LayerIntegratedGradients(forward_func, self.model.bert.embeddings)
+    
         attributions, _ = lig.attribute(
             inputs=self.input_ids,
             baselines=self.ref_input_ids,
@@ -77,15 +90,16 @@ class XAI:
             internal_batch_size=3,
             return_convergence_delta=True
         )
-
+    
         token_attributions = attributions.sum(dim=-1).squeeze()
         words, word_attributions = self.aggregate_token_attributions(token_attributions, self.tokens)
-
-        # Normalize word attributions AFTER aggregation
+    
+        # Normalize
         norm = torch.norm(torch.tensor(word_attributions)) + 1e-8
         normalized = [float(attr) / norm for attr in word_attributions]
-
+    
         return self.filter_stopwords_punctuation(words, normalized, self.text)
+
 
     def predict_probabilities(self):
         logits = self.model(self.input_ids)[0]
