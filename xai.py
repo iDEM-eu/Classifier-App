@@ -26,12 +26,6 @@ class XAI:
         self.ref_input_ids = torch.tensor([ref_input_ids], device=self.device)
         return self.input_ids, self.ref_input_ids
 
-    def custom_forward(self, inputs):
-        logits = self.model(inputs)[0]
-        probs = torch.softmax(logits, dim=1)
-        self.predicted_label = torch.argmax(probs, dim=1).item()
-        return probs[:, self.predicted_label]
-
     def filter_stopwords_punctuation(self, words, attributions, text):
         detected_lang = detect_language(text)
         stopwords_set = STOPWORDS_DICT.get(detected_lang, STOPWORDS_DICT["english"])
@@ -68,21 +62,19 @@ class XAI:
     def compute_attributions(self):
         self.input_ids, self.ref_input_ids = self.construct_input_ref()
         self.tokens = [t for t in self.tokenizer.convert_ids_to_tokens(self.input_ids[0]) if t not in ["[CLS]", "[SEP]"]]
-    
-        # 🔍 Predict once to get the predicted label
+
         with torch.no_grad():
             logits = self.model(self.input_ids)[0]
             probs = torch.softmax(logits, dim=1)
             self.predicted_label = torch.argmax(probs, dim=1).item()
-    
-        # 🎯 Define a local forward function that uses the fixed label
+
         def forward_func(inputs):
             logits = self.model(inputs)[0]
             probs = torch.softmax(logits, dim=1)
             return probs[:, self.predicted_label]
-    
+
         lig = LayerIntegratedGradients(forward_func, self.model.bert.embeddings)
-    
+
         attributions, _ = lig.attribute(
             inputs=self.input_ids,
             baselines=self.ref_input_ids,
@@ -90,16 +82,14 @@ class XAI:
             internal_batch_size=3,
             return_convergence_delta=True
         )
-    
+
         token_attributions = attributions.sum(dim=-1).squeeze()
         words, word_attributions = self.aggregate_token_attributions(token_attributions, self.tokens)
-    
-        # Normalize
+
         norm = torch.norm(torch.tensor(word_attributions)) + 1e-8
         normalized = [float(attr) / norm for attr in word_attributions]
-    
-        return self.filter_stopwords_punctuation(words, normalized, self.text)
 
+        return self.filter_stopwords_punctuation(words, normalized, self.text)
 
     def predict_probabilities(self):
         logits = self.model(self.input_ids)[0]
@@ -110,15 +100,18 @@ class XAI:
         words, word_attributions = self.compute_attributions()
         probabilities = self.predict_probabilities()
 
-        # HTML for tokens
+        label_names = ['Simple', 'Complex']
+        predicted_label_name = label_names[self.predicted_label]
+
+        # Highlighted tokens
         max_abs_attr = max(abs(a) for a in word_attributions) or 1.0
         token_html = ""
         for word, score in zip(words, word_attributions):
             alpha = abs(score / max_abs_attr)
-            color = f"rgba(0, 128, 0, {alpha})" if score > 0 else f"rgba(255, 0, 0, {alpha})"
+            color = f"rgba(255, 0, 0, {alpha:.2f})" if score > 0 else f"rgba(0, 128, 0, {alpha:.2f})"
             token_html += f"<span style='background-color: {color}; padding: 2px;'>{word} </span>"
 
-        # Attribution table sorted by importance
+        # Attribution table
         top_attributions = (
             pd.DataFrame({'Word': words, 'Attribution': word_attributions})
               .assign(Abs=lambda df: df['Attribution'].abs())
@@ -127,25 +120,28 @@ class XAI:
               .head(10)
         )
 
-        # HTML for output
+        # HTML output
         html_content = f"""
         <div style="margin-bottom: 20px;">
             <h4>Prediction Probabilities</h4>
-                    <div>Simple</div>
+            <div>
+                <div>Simple</div>
                 <div style="width: 100%; height: 20px; background-color: #eee; border-radius: 5px; margin: 5px 0;">
-                    <div style="width: {probabilities[0] * 100}%; height: 100%; background-color: #4CAF50; border-radius: 5px;"></div>
+                    <div style="width: {probabilities[0] * 100:.2f}%; height: 100%; background-color: #4CAF50; border-radius: 5px;"></div>
                 </div>
                 <p>Probability: {probabilities[0]:.2f}</p>
                 <div>Complex</div>
                 <div style="width: 100%; height: 20px; background-color: #eee; border-radius: 5px; margin: 5px 0;">
-                    <div style="width: {probabilities[1] * 100}%; height: 100%; background-color: #F44336; border-radius: 5px;"></div>
+                    <div style="width: {probabilities[1] * 100:.2f}%; height: 100%; background-color: #F44336; border-radius: 5px;"></div>
                 </div>
+                <p>Probability: {probabilities[1]:.2f}</p>
+            </div>
             <h4>Text with Highlighted Words</h4>
             <p>{token_html}</p>
             <div style="margin-top: 10px; font-size: 14px;">
-                <strong>Legend:</strong>
-                <span style="background-color: rgba(0, 128, 0, 0.5); padding: 2px; margin-left: 5px;">Green</span> = supports prediction,
-                <span style="background-color: rgba(255, 0, 0, 0.5); padding: 2px; margin-left: 5px;">Red</span> = opposes prediction
+                <strong>Legend for <em>{predicted_label_name}</em> prediction:</strong>
+                <span style="background-color: rgba(255, 0, 0, 0.5); padding: 2px; margin-left: 5px;">Red</span> = supports prediction,
+                <span style="background-color: rgba(0, 128, 0, 0.5); padding: 2px; margin-left: 5px;">Green</span> = opposes prediction
             </div>
         </div>
         """
