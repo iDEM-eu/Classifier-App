@@ -169,7 +169,7 @@ with col2:
 
 
                 if explain_xai:
-                    st.subheader("🔍 Captum Explainability")
+                    st.subheader("🔍 Integrated Gradients Explainability")
                     with st.spinner("Computing attributions..."):
                         xai = XAI(text, label, tokenizer, model, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
                         html_output, top_attributions = xai.generate_html()
