@@ -146,7 +146,7 @@ with col2:
                     predicted_class = outputs.logits.argmax().item()
 
                 label = "Simple" if predicted_class == 0 else "Complex"
-                st.markdown(f'<div class="result-box"> **Predicted Class:** {label}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="result-box">**Predicted Class:** {label}</div>', unsafe_allow_html=True)
                 if label == "Complex":
                     #st.subheader(" Advanced Complexity Analysis")
 
