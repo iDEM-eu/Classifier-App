@@ -48,7 +48,7 @@ st.markdown("---")  # **Add a separator between input and output sections**
 
 with col2:
     ### **🔹 Results Section**
-    st.subheader("📊 Prediction Results")
+    ## st.subheader("📊 Prediction Results")
 
     # ---- Initialize Variables ----
     simple_count, complex_count = 0, 0
@@ -58,7 +58,7 @@ with col2:
         results = []
         if option == "Compare all models":
             if input_method == "Paste Text" and text.strip():
-                st.subheader("📊 Model Predictions")
+               ## st.subheader("📊 Model Predictions")
                 progress_bar = st.progress(0)
     
                 for i, model_name in enumerate(MODEL_NAMES):
@@ -84,7 +84,7 @@ with col2:
                 st.dataframe(df_results)
                 
                 # **Insights Section**
-                st.subheader("📊 Insights")
+                ##st.subheader("📊 Insights")
                 if simple_count > complex_count:
                     st.success(f"✅ Majority of models classified the text as **Simple** ({simple_count}/{len(MODEL_NAMES)}).")
                 elif complex_count > simple_count:
@@ -133,7 +133,7 @@ with col2:
         elif input_method == "Paste Text" and text.strip():
             sentences = [text]
             if option == "Select a single model":
-                st.subheader("🔹 Model Prediction")
+               # st.subheader("🔹 Model Prediction")
                 model_name_short = selected_model.split("/")[-1]  # Extracts the last part of the model path
                 st.info(f"🧠 **Model Used:** `{model_name_short}`")
 
@@ -148,7 +148,7 @@ with col2:
                 label = "Simple" if predicted_class == 0 else "Complex"
                 st.markdown(f'<div class="result-box">✅ **Predicted Class:** {label}</div>', unsafe_allow_html=True)
                 if label == "Complex":
-                    st.subheader(" Advanced Complexity Analysis")
+                    #st.subheader(" Advanced Complexity Analysis")
 
                     with st.spinner("🔄 Running secondary classification..."):
                         typology_model_name = "hannah-khallaf/Typlogy-Classifier"
