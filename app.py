@@ -165,7 +165,7 @@ with col2:
                         complexity_types =  {0: 'Compression',  1:'Explanation',  2: 'Modulation',  3: 'Omission', 4: 'Synonymy',  5: 'Syntactic Changes',  6: 'Transcript',  7: 'Transposition'}
 
                         detailed_label = complexity_types.get(complexity_label, "Unknown Complexity Type")
-                        st.warning(f"🧐 **Complexity Type:** {detailed_label}")
+                        st.warning(f"**Complexity Type:** {detailed_label}")
 
 
                 if explain_xai:
