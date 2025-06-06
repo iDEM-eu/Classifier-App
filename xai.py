@@ -131,25 +131,22 @@ class XAI:
         html_content = f"""
         <div style="margin-bottom: 20px;">
             <h4>Prediction Probabilities</h4>
-            <div>
-                <div>Simple</div>
-                    <div style="width: 100%; height: 20px; background-color: #ddd; border-radius: 5px; margin: 5px 0;">
-                        <div style="width: {probabilities[0] * 100}%; height: 100%; background-color: blue; border-radius: 5px;"></div>
-                    </div>
-                    <p>Probability: {probabilities[0]:.2f}</p>
-                    <div>Complex</div>
-                    <div style="width: 100%; height: 20px; background-color: #ddd; border-radius: 5px; margin: 5px 0;">
-                        <div style="width: {probabilities[1] * 100}%; height: 100%; background-color: orange; border-radius: 5px;"></div>
-                    </div>
-                <p>Probability: {probabilities[1]:.2f}</p>
-            </div>
+                    <div>Simple</div>
+                <div style="width: 100%; height: 20px; background-color: #eee; border-radius: 5px; margin: 5px 0;">
+                    <div style="width: {probabilities[0] * 100}%; height: 100%; background-color: #4CAF50; border-radius: 5px;"></div>
+                </div>
+                <p>Probability: {probabilities[0]:.2f}</p>
+                <div>Complex</div>
+                <div style="width: 100%; height: 20px; background-color: #eee; border-radius: 5px; margin: 5px 0;">
+                    <div style="width: {probabilities[1] * 100}%; height: 100%; background-color: #F44336; border-radius: 5px;"></div>
+                </div>
             <h4>Text with Highlighted Words</h4>
             <p>{token_html}</p>
-<div style="margin-top: 10px; font-size: 14px;">
-    <strong>Legend:</strong>
-    <span style="background-color: rgba(0, 128, 0, 0.5); padding: 2px; margin-left: 5px;">Green</span> = supports prediction,
-    <span style="background-color: rgba(255, 0, 0, 0.5); padding: 2px; margin-left: 5px;">Red</span> = opposes prediction
-</div>
+            <div style="margin-top: 10px; font-size: 14px;">
+                <strong>Legend:</strong>
+                <span style="background-color: rgba(0, 128, 0, 0.5); padding: 2px; margin-left: 5px;">Green</span> = supports prediction,
+                <span style="background-color: rgba(255, 0, 0, 0.5); padding: 2px; margin-left: 5px;">Red</span> = opposes prediction
+            </div>
         </div>
         """
         return html_content, top_attributions
