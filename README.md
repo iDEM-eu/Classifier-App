@@ -35,6 +35,31 @@ FastAPI service for:
 This API is designed to sit alongside the existing Streamlit app.
 
 ---
+## Requirements
+
+### Python
+
+* **Version:** Python **3.10+** (✅ **3.11 recommended**)
+* **Tools:** `pip`, `venv` (or `conda`), `git`
+* **Notes:**
+
+  * We bundle all Python deps in `requirements.txt`.
+  * If you use **GPU**, install a PyTorch wheel that matches your CUDA (see PyTorch site).
+  * If you’re on Python 3.9, the API works (we use `Optional[...]` type hints), but 3.10+ is preferred.
+
+> For GPU, install `torch` separately with the correct CUDA build **before** `pip install -r requirements.txt`.
+
+---
+
+### System
+
+* **OS:** Linux (x86\_64), macOS 12+ (Intel or Apple Silicon), or Windows 11 (via **WSL2** recommended)
+* **CPU/GPU:** CPU works out of the box; GPU optional for faster inference
+* **RAM/Disk (guideline):** ≥ **4 GB RAM** (8 GB+ recommended), **3–5 GB** free disk for model/cache
+* **Network:** Outbound access to `huggingface.co` to download models
+* **If models are private/gated:** set `HF_TOKEN` 
+
+---
 
 ## Run Locally
 
@@ -171,6 +196,7 @@ MAX_FILE_LINES=5000
 - File endpoints only accept `.txt` and UTF‑8 encoding.
 - You can limit max file lines via env var `MAX_FILE_LINES` (default 5000).
 - Labels follow streamlit app: `0 -> Simple`, `1 -> Complex`.
+
 
 
 
