@@ -83,7 +83,7 @@ curl -s -X POST http://localhost:8000/predict/batch   -H "Content-Type: applicat
 Each line is treated as a separate input:
 
 ```bash
-curl -s -X POST "http://localhost:8000/predict/file?model_name=hannah-khallaf/Sentence-Complexity-Classifier"   -F "file=@sentences.txt"
+curl -s -X POST "http://localhost:8000/predict/file"   -F "file=@sentences.txt"
 ```
 
 Example `sentences.txt`:
