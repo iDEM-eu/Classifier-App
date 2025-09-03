@@ -83,7 +83,7 @@ curl -s -X POST http://localhost:8000/predict/batch   -H "Content-Type: applicat
 Each line is treated as a separate input:
 
 ```bash
-curl -s -X POST "http://localhost:8000/predict/file?model_name=hannah-khallaf/Sentence-Complexity-Classifier"   -F "file=@sentences.txt"
+curl -s -X POST "http://localhost:8000/predict/file"   -F "file=@sentences.txt"
 ```
 
 Example `sentences.txt`:
@@ -126,10 +126,46 @@ curl -s -X POST http://localhost:8000/explain   -H "Content-Type: application/js
 docker build -t complexity-api .
 docker run --rm -p 8000:8000 complexity-api
 ```
+## API Quickstart (Docker Compose)
+
+```bash
+# from the repo root
+docker compose up --build -d
+
+# view logs
+docker compose logs -f
+
+# stop
+docker compose down
+```
+
+* **Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Environment variables
+
+Create a `.env` file next to `docker-compose.yml` (Compose reads it automatically):
+
+```env
+# only needed if your HF models are private/gated
+HF_TOKEN=hf_xxx_or_leave_empty
+
+# allow dev frontends; tighten for prod
+CORS_ALLOW_ORIGINS=*
+
+# safety guard for /predict/file
+MAX_FILE_LINES=5000
+```
+
+> The external port defaults to **8000**. Change it in `docker-compose.yml` under `ports`,:
+>
+> ```yaml
+> ports:
+>   - "8080:8000"
+> ```
 
 ---
 
-## ⚙️ Notes & Limits
+## Notes & Limits
 
 - GPU is used automatically if available.
 - File endpoints only accept `.txt` and UTF‑8 encoding.
