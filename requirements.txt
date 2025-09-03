@@ -7,3 +7,7 @@ captum
 ipython
 nltk
 langdetect
+fastapi
+uvicorn[standard]
+pydantic
+ 
