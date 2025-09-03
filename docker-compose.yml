@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  api:
+    build: .
+    image: complexity-api
+    container_name: complexity-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Hugging Face token only if your models are private/gated
+      HUGGINGFACE_HUB_TOKEN: ${HF_TOKEN:-}
+      # frontend CORS during dev (tighten in prod)
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-*}
+      # safety limit for /predict/file
+      MAX_FILE_LINES: ${MAX_FILE_LINES:-5000}
+    volumes:
+      # persist Hugging Face cache between runs (faster cold starts)
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+    # default command set in Dockerfile: uvicorn api.main:app --host 0.0.0.0 --port 8000
