@@ -73,7 +73,7 @@ curl -s -X POST http://localhost:8000/predict   -H "Content-Type: application/js
 ```
 
 ### Binary Classification — Batch (JSON)
-
+export MAX_FILE_LINES=20000
 ```bash
 curl -s -X POST http://localhost:8000/predict/batch   -H "Content-Type: application/json"   -d '{"texts":["Text A","Text B"],"model_name":"hannah-khallaf/Sentence-Complexity-Classifier"}'
 ```
