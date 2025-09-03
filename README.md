@@ -18,7 +18,7 @@ cd Classifier-App
 pip install -r requirements.txt
 ```
 
-## ▶️ Run the App
+## Run the App
 ```bash
 streamlit run app.py
 ```
@@ -32,7 +32,7 @@ FastAPI service for:
 - **Model comparison** across all configured HF models
 - Optional **XAI** via Captum Integrated Gradients
 
-This API is designed to sit alongside your existing Streamlit app.
+This API is designed to sit alongside the existing Streamlit app.
 
 ---
 
@@ -146,7 +146,7 @@ docker compose down
 Create a `.env` file next to `docker-compose.yml` (Compose reads it automatically):
 
 ```env
-# only needed if your HF models are private/gated
+# only needed if  HF models are private/gated
 HF_TOKEN=hf_xxx_or_leave_empty
 
 # allow dev frontends; tighten for prod
