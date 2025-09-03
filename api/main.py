@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi import UploadFile, File, HTTPException
 from .schemas import (
     PredictRequest, PredictResponse, Prediction,
     BatchPredictRequest, BatchPredictResponse, BatchPredictResponseItem,
@@ -64,6 +64,42 @@ def strategy_batch(req: BatchStrategyRequest):
     pairs = typology_batch(req.texts)
     items = [BatchStrategyResponseItem(text=t, index=i, label=lab) for t, (i, lab) in zip(req.texts, pairs)]
     return BatchStrategyResponse(results=items)
+
+
+
+
+@app.post("/predict/file", response_model=BatchPredictResponse)
+async def predict_file(file: UploadFile = File(...), model_name: str = None):
+    if not file.filename.endswith(".txt"):
+        raise HTTPException(status_code=400, detail="Only .txt files are supported.")
+
+    content = (await file.read()).decode("utf-8")
+    sentences = [s.strip() for s in content.split("\n") if s.strip()]
+    if not sentences:
+        raise HTTPException(status_code=400, detail="File is empty.")
+
+    labels, logits = classify_batch(sentences, model_name=model_name)
+    items = [
+        BatchPredictResponseItem(text=t, prediction=Prediction(label=l, raw_logits=log))
+        for t, l, log in zip(sentences, labels, logits)
+    ]
+    return BatchPredictResponse(model_name=model_name or DEFAULT_MODEL, results=items)
+
+
+@app.post("/strategy/file", response_model=BatchStrategyResponse)
+async def strategy_file(file: UploadFile = File(...)):
+    if not file.filename.endswith(".txt"):
+        raise HTTPException(status_code=400, detail="Only .txt files are supported.")
+
+    content = (await file.read()).decode("utf-8")
+    sentences = [s.strip() for s in content.split("\n") if s.strip()]
+    if not sentences:
+        raise HTTPException(status_code=400, detail="File is empty.")
+
+    pairs = typology_batch(sentences)
+    items = [BatchStrategyResponseItem(text=t, index=i, label=lab) for t, (i, lab) in zip(sentences, pairs)]
+    return BatchStrategyResponse(results=items)
+
 
 # ---- Compare across all models ----
 
