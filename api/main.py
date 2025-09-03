@@ -1,7 +1,9 @@
 import os
-from fastapi import FastAPI
+from typing import Optional
+
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import UploadFile, File, HTTPException
+
 from .schemas import (
     PredictRequest, PredictResponse, Prediction,
     BatchPredictRequest, BatchPredictResponse, BatchPredictResponseItem,
@@ -40,8 +42,10 @@ def health():
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
     label, logits = classify_single(req.text, model_name=req.model_name)
-    return PredictResponse(model_name=req.model_name or DEFAULT_MODEL,
-                           prediction=Prediction(label=label, raw_logits=logits))
+    return PredictResponse(
+        model_name=req.model_name or DEFAULT_MODEL,
+        prediction=Prediction(label=label, raw_logits=logits)
+    )
 
 @app.post("/predict/batch", response_model=BatchPredictResponse)
 def predict_batch(req: BatchPredictRequest):
@@ -65,18 +69,26 @@ def strategy_batch(req: BatchStrategyRequest):
     items = [BatchStrategyResponseItem(text=t, index=i, label=lab) for t, (i, lab) in zip(req.texts, pairs)]
     return BatchStrategyResponse(results=items)
 
+# ---- File endpoints (TXT files; one sentence per line) ----
 
-
+MAX_LINES = int(os.getenv("MAX_FILE_LINES", "5000"))  # simple guard to avoid abuse
 
 @app.post("/predict/file", response_model=BatchPredictResponse)
-async def predict_file(file: UploadFile = File(...), model_name: str = None):
-    if not file.filename.endswith(".txt"):
+async def predict_file(file: UploadFile = File(...), model_name: Optional[str] = None):
+    if not file.filename.lower().endswith(".txt"):
         raise HTTPException(status_code=400, detail="Only .txt files are supported.")
 
-    content = (await file.read()).decode("utf-8")
-    sentences = [s.strip() for s in content.split("\n") if s.strip()]
+    raw = await file.read()
+    try:
+        content = raw.decode("utf-8-sig")  # handle UTF-8 + BOM
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded.")
+
+    sentences = [s.strip() for s in content.splitlines() if s.strip()]
     if not sentences:
         raise HTTPException(status_code=400, detail="File is empty.")
+    if len(sentences) > MAX_LINES:
+        raise HTTPException(status_code=413, detail=f"Too many lines (>{MAX_LINES}).")
 
     labels, logits = classify_batch(sentences, model_name=model_name)
     items = [
@@ -88,18 +100,24 @@ async def predict_file(file: UploadFile = File(...), model_name: str = None):
 
 @app.post("/strategy/file", response_model=BatchStrategyResponse)
 async def strategy_file(file: UploadFile = File(...)):
-    if not file.filename.endswith(".txt"):
+    if not file.filename.lower().endswith(".txt"):
         raise HTTPException(status_code=400, detail="Only .txt files are supported.")
 
-    content = (await file.read()).decode("utf-8")
-    sentences = [s.strip() for s in content.split("\n") if s.strip()]
+    raw = await file.read()
+    try:
+        content = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be UTF-8 encoded.")
+
+    sentences = [s.strip() for s in content.splitlines() if s.strip()]
     if not sentences:
         raise HTTPException(status_code=400, detail="File is empty.")
+    if len(sentences) > MAX_LINES:
+        raise HTTPException(status_code=413, detail=f"Too many lines (>{MAX_LINES}).")
 
     pairs = typology_batch(sentences)
     items = [BatchStrategyResponseItem(text=t, index=i, label=lab) for t, (i, lab) in zip(sentences, pairs)]
     return BatchStrategyResponse(results=items)
-
 
 # ---- Compare across all models ----
 
