@@ -1,13 +1,19 @@
-streamlit
-torch
-transformers
-pandas
-plotly
-captum
-ipython
-nltk
-langdetect
+# ---- Top-level requirements for Streamlit app + FastAPI API ----
+# Core API / web
 fastapi
 uvicorn[standard]
-pydantic
- 
+python-multipart
+
+# ML stack
+transformers
+torch
+safetensors
+
+# XAI (optional but enabled in /explain and Streamlit when toggled)
+captum
+
+# Streamlit UI + data viz
+streamlit
+pandas
+plotly
+ipython
