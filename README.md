@@ -156,7 +156,7 @@ CORS_ALLOW_ORIGINS=*
 MAX_FILE_LINES=5000
 ```
 
-> The external port defaults to **8000**. Change it in `docker-compose.yml` under `ports`, e.g.:
+> The external port defaults to **8000**. Change it in `docker-compose.yml` under `ports`,:
 >
 > ```yaml
 > ports:
