@@ -17,5 +17,4 @@ streamlit
 pandas
 plotly
 ipython
-nltk
-langdetect
+
